@@ -1,0 +1,10 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "always"
+restartPolicyMaxRetries = 5
+
+[[services]]
+name = "visa-slot-checker"

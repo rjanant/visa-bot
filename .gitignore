@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+/ms-playwright/
+.DS_Store
+.vscode/
