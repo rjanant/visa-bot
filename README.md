@@ -106,15 +106,24 @@ launchctl load ~/Library/LaunchAgents/com.visabot.italychecker.plist
 
 ---
 
-## Gmail App Password
+## Gmail App Password + IMAP
 
-Your normal Gmail password won't work — you need an App Password:
+Your normal Gmail password won't work — you need an App Password.
+The bot also reads OTP codes from your Gmail inbox automatically via IMAP, so IMAP must be enabled.
 
+**Step 1 — Enable IMAP in Gmail:**
+1. Open Gmail → Settings (⚙) → **See all settings**
+2. Go to the **Forwarding and POP/IMAP** tab
+3. Under *IMAP access*, select **Enable IMAP** → Save Changes
+
+**Step 2 — Create an App Password:**
 1. Go to [myaccount.google.com/security](https://myaccount.google.com/security)
 2. Enable **2-Step Verification** if not already on
 3. Search for **"App passwords"** in the search bar
 4. Name it `visa_bot`, click **Create**
 5. Copy the 16-character code (looks like `abcd efgh ijkl mnop`) into `.env`
+
+> The bot uses this same App Password for both **sending** alert emails (SMTP) and **reading** OTP emails (IMAP). One credential, two directions.
 
 ---
 

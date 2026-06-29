@@ -23,6 +23,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout, Page
 
 from bot.notifier import send_email_notification
+from bot.otp_reader import fetch_otp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +39,10 @@ HEADLESS = os.environ.get("HEADLESS", "true").lower() == "true"
 
 VFS_EMAIL    = os.environ["VFS_EMAIL"]
 VFS_PASSWORD = os.environ["VFS_PASSWORD"]
+
+# Gmail credentials reused for IMAP OTP reading (same account as notifications)
+GMAIL_SENDER  = os.environ["GMAIL_SENDER"]
+GMAIL_APP_PWD = os.environ["GMAIL_APP_PWD"]
 
 # ── Phrases that VFS shows when NO slots exist ─────────────────────────────────
 NO_SLOT_PHRASES = [
@@ -218,17 +223,51 @@ async def _do_login(page: Page) -> bool:
     await wait_for_navigation_or_content(page, timeout=30_000)
     await dump_page_state(page, "after-login")
 
-    # Check if we have an OTP / 2FA step
-    otp_sel = 'input[placeholder*="OTP" i], input[placeholder*="code" i], input[name*="otp" i], input[name*="code" i]'
+    # ── Handle email OTP / 2FA if VFS requires it ─────────────────────────────
+    otp_input_sel = (
+        'input[placeholder*="OTP" i], '
+        'input[placeholder*="code" i], '
+        'input[name*="otp" i], '
+        'input[name*="code" i], '
+        'input[id*="otp" i], '
+        'input[autocomplete="one-time-code"]'
+    )
     try:
-        await page.wait_for_selector(otp_sel, timeout=5_000, state="visible")
-        log.warning(
-            "⚠️  OTP / 2FA required. The bot cannot handle this automatically. "
-            "Disable 2FA on your VFS account or use an account without OTP requirement."
+        await page.wait_for_selector(otp_input_sel, timeout=5_000, state="visible")
+        log.info("OTP screen detected — fetching code from Gmail inbox …")
+
+        # Run blocking IMAP fetch in a thread so we don't block the event loop
+        loop = asyncio.get_event_loop()
+        otp_code = await loop.run_in_executor(
+            None, fetch_otp, GMAIL_SENDER, GMAIL_APP_PWD
         )
-        return False
+
+        if not otp_code:
+            log.error("Could not retrieve OTP from Gmail within timeout. Login failed.")
+            await dump_page_state(page, "otp-timeout")
+            return False
+
+        log.info("Entering OTP: %s", otp_code)
+        await page.fill(otp_input_sel, otp_code)
+
+        # Submit OTP form
+        otp_submit_sel = (
+            'button[type="submit"], '
+            'button:has-text("Verify"), '
+            'button:has-text("Submit"), '
+            'button:has-text("Confirm"), '
+            'button:has-text("Continue")'
+        )
+        submitted = await safe_click(page, otp_submit_sel, "OTP submit", timeout=6_000)
+        if not submitted:
+            await page.keyboard.press("Enter")
+            log.info("Pressed Enter to submit OTP.")
+
+        await wait_for_navigation_or_content(page, timeout=20_000)
+        await dump_page_state(page, "after-otp")
+
     except PlaywrightTimeout:
-        pass
+        pass  # No OTP screen — straight through to the wizard
 
     # Verify login succeeded
     error_sel = '.error, .alert-danger, [class*="error-message"], [class*="login-error"]'
