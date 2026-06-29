@@ -78,10 +78,30 @@ In Railway: **Project → Variables**, add each of the following:
 | `GMAIL_SENDER` | Gmail address to send from |
 | `GMAIL_APP_PWD` | 16-char App Password (spaces are fine) |
 | `NOTIFY_EMAIL` | Email address to receive alerts |
+| `PROXY_SERVER` | **Required** — residential proxy `host:port` (see below) |
+| `PROXY_USERNAME` | Proxy username (if your provider requires auth) |
+| `PROXY_PASSWORD` | Proxy password (if your provider requires auth) |
 | `CHECK_INTERVAL_SECONDS` | *(optional)* Seconds between checks, default `120` |
 | `HEADLESS` | *(optional)* Keep `true` on Railway |
 
-### Step 4 — Deploy
+### Step 4 — Get a free residential proxy
+
+VFS Global blocks all datacenter IPs (AWS, GCP, Railway, etc.) with a `403201` error.
+You must route requests through a **residential IP** that looks like a real home user.
+
+**Webshare — free tier (10 residential proxies, no credit card needed):**
+
+1. Sign up at [proxy.webshare.io](https://proxy.webshare.io)
+2. Go to **Proxy** → **Residential** → **List** (or **Proxy List** on the free plan)
+3. Copy any entry in the format `host:port:username:password`
+4. In Railway variables set:
+   - `PROXY_SERVER` = `host:port`  (e.g. `p.webshare.io:80`)
+   - `PROXY_USERNAME` = the username part
+   - `PROXY_PASSWORD` = the password part
+
+> **Why residential?** Datacenter IPs have known ASN ranges that VFS (and most government sites) actively block. A residential proxy uses real home ISP IPs, which pass through fine.
+
+### Step 5 — Deploy
 
 Click **Deploy** (or push a new commit). The bot starts automatically and logs appear in the Railway dashboard.
 
