@@ -39,27 +39,6 @@ HEADLESS = os.environ.get("HEADLESS", "true").lower() == "true"
 VFS_EMAIL    = os.environ["VFS_EMAIL"]
 VFS_PASSWORD = os.environ["VFS_PASSWORD"]
 
-# ── Residential proxy (required when running on Railway / any datacenter) ──────
-# VFS Global blocks datacenter IPs with HTTP 403201.
-# Set PROXY_SERVER=host:port and optionally PROXY_USERNAME / PROXY_PASSWORD.
-# Free residential proxies: https://proxy.webshare.io (10 free residential IPs)
-_proxy_server   = os.environ.get("PROXY_SERVER", "")    # e.g. "p.webshare.io:80"
-_proxy_user     = os.environ.get("PROXY_USERNAME", "")
-_proxy_password = os.environ.get("PROXY_PASSWORD", "")
-
-PROXY = None  # type: dict | None
-if _proxy_server:
-    PROXY = {"server": f"http://{_proxy_server}"}
-    if _proxy_user:
-        PROXY["username"] = _proxy_user
-        PROXY["password"] = _proxy_password
-    log.info("Proxy configured: %s (user=%s)", _proxy_server, _proxy_user or "<none>")
-else:
-    log.warning(
-        "No PROXY_SERVER set. VFS Global blocks datacenter IPs — "
-        "requests will likely return 403201. Set PROXY_SERVER in Railway variables."
-    )
-
 # ── Phrases that VFS shows when NO slots exist ─────────────────────────────────
 NO_SLOT_PHRASES = [
     "no appointments available",
@@ -515,8 +494,6 @@ async def run_check_loop() -> None:
             locale="en-GB",
             timezone_id="Europe/London",
         )
-        if PROXY:
-            context_kwargs["proxy"] = PROXY
 
         context = await browser.new_context(**context_kwargs)
         page = await context.new_page()
@@ -577,7 +554,7 @@ async def run_check_loop() -> None:
                             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
                         )
                     except Exception:
-                        # Context itself broken — recreate with proxy
+                        # Context itself broken — recreate
                         try:
                             await context.close()
                         except Exception:

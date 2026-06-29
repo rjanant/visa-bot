@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Unique label — must match the filename -->
+  <key>Label</key>
+  <string>com.visabot.italychecker</string>
+
+  <!-- Run run.sh directly; it loads .env and starts Python -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/anantraj/Documents/visa_bot/run.sh</string>
+  </array>
+
+  <!-- Working directory (so .env is found) -->
+  <key>WorkingDirectory</key>
+  <string>/Users/anantraj/Documents/visa_bot</string>
+
+  <!-- Start automatically when you log in -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Restart if it crashes -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Log stdout and stderr to files you can tail -->
+  <key>StandardOutPath</key>
+  <string>/Users/anantraj/Documents/visa_bot/logs/visabot.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/anantraj/Documents/visa_bot/logs/visabot.err</string>
+
+  <!-- Throttle restarts — wait 10 s before restarting on crash -->
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+</dict>
+</plist>
